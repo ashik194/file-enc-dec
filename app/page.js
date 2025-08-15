@@ -2,40 +2,56 @@
 import { useState } from 'react';
 
 export default function Home() {
-  const [file, setFile] = useState(null);
-  const [password, setPassword] = useState('');
+  // Encryption State
+  const [encryptFile, setEncryptFile] = useState(null);
+  const [encryptPassword, setEncryptPassword] = useState('');
   const [encryptedFile, setEncryptedFile] = useState(null);
-  const [decryptedFile, setDecryptedFile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [fileExtension, setFileExtension] = useState('');  // Track file extension
+  const [encryptLoading, setEncryptLoading] = useState(false);
 
-  const handleFileChange = (e) => {
+  // Decryption State
+  const [decryptFile, setDecryptFile] = useState(null);
+  const [decryptPassword, setDecryptPassword] = useState('');
+  const [decryptedFile, setDecryptedFile] = useState(null);
+  const [decryptLoading, setDecryptLoading] = useState(false);
+
+  const [originalFileExtension, setOriginalFileExtension] = useState('');  // Store original extension
+
+  const handleFileChange = (e, action) => {
     const selectedFile = e.target.files[0];
     console.log("File selected:", selectedFile);
-    setFile(selectedFile);
-
-    // Store the original file extension
-    const fileExt = selectedFile.name.split('.').pop();
-    setFileExtension(fileExt);
+    
+    if (action === 'encrypt') {
+      setEncryptFile(selectedFile);
+      // Store the original file extension when encrypting
+      const fileExt = selectedFile.name.split('.').pop();
+      setOriginalFileExtension(fileExt);
+    } else if (action === 'decrypt') {
+      setDecryptFile(selectedFile);
+    }
   };
 
-  const handlePasswordChange = (e) => {
+  const handlePasswordChange = (e, action) => {
     const enteredPassword = e.target.value;
     console.log("Password entered:", enteredPassword);
-    setPassword(enteredPassword);
+
+    if (action === 'encrypt') {
+      setEncryptPassword(enteredPassword);
+    } else if (action === 'decrypt') {
+      setDecryptPassword(enteredPassword);
+    }
   };
 
   // Encrypt file handler
   const handleEncryptFile = async () => {
-    if (!file || !password) {
-      alert("Please select a file and enter a password.");
+    if (!encryptFile || !encryptPassword) {
+      alert("Please select a file and enter a password for encryption.");
       return;
     }
 
-    setLoading(true);
+    setEncryptLoading(true);
 
     try {
-      const { encryptedData, iv } = await encryptFile(file, password);
+      const { encryptedData, iv } = await encryptFileMethod(encryptFile, encryptPassword, originalFileExtension);
 
       const encryptedBlob = new Blob([iv, encryptedData], { type: 'application/octet-stream' });
       const encryptedFileURL = URL.createObjectURL(encryptedBlob);
@@ -50,38 +66,45 @@ export default function Home() {
       console.error("Encryption Error:", error);
       alert("Error encrypting file");
     } finally {
-      setLoading(false);
+      setEncryptLoading(false);
     }
   };
 
   // Decrypt file handler
   const handleDecryptFile = async () => {
-    if (!file || !password) {
-      alert("Please select a file and enter a password.");
+    if (!decryptFile || !decryptPassword) {
+      alert("Please select a file and enter a password for decryption.");
       return;
     }
 
-    setLoading(true);
+    setDecryptLoading(true);
 
     try {
-      const decryptedData = await decryptFile(file, password);
+      const { decryptedData, fileExtension } = await decryptFileMethod(decryptFile, decryptPassword);
 
       const decryptedBlob = new Blob([decryptedData], { type: 'application/octet-stream' });
       const decryptedFileURL = URL.createObjectURL(decryptedBlob);
 
-      setDecryptedFile(decryptedFileURL);
+      setDecryptedFile({
+        url: decryptedFileURL,
+        extension: fileExtension
+      });
       alert("File decrypted successfully!");
     } catch (error) {
       console.error("Decryption Error:", error);
       alert("Error decrypting file");
     } finally {
-      setLoading(false);
+      setDecryptLoading(false);
     }
   };
 
-  async function encryptFile(file, password) {
+  async function encryptFileMethod(file, password, fileExtension) {
     const encoder = new TextEncoder();
     const data = await file.arrayBuffer();
+
+    // Store file extension in the encrypted data
+    const extensionBytes = encoder.encode(fileExtension);
+    const extensionLength = new Uint8Array([extensionBytes.length]); // Store length of extension
 
     const keyMaterial = await window.crypto.subtle.importKey(
       "raw", encoder.encode(password), "PBKDF2", false, ["deriveKey"]
@@ -96,17 +119,25 @@ export default function Home() {
     );
 
     const iv = window.crypto.getRandomValues(new Uint8Array(16)); // Random IV
+    
+    // Combine extension info with file data
+    const combinedData = new Uint8Array(extensionLength.length + extensionBytes.length + data.byteLength);
+    combinedData.set(extensionLength, 0);
+    combinedData.set(extensionBytes, extensionLength.length);
+    combinedData.set(new Uint8Array(data), extensionLength.length + extensionBytes.length);
+
     const encryptedData = await window.crypto.subtle.encrypt(
       { name: "AES-CBC", iv },
       derivedKey,
-      data
+      combinedData
     );
 
     return { encryptedData, iv };
   }
 
-  async function decryptFile(file, password) {
+  async function decryptFileMethod(file, password) {
     const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
     const data = await file.arrayBuffer();
 
     const iv = new Uint8Array(data.slice(0, 16)); // First 16 bytes
@@ -130,7 +161,15 @@ export default function Home() {
       encryptedData
     );
 
-    return decryptedData;
+    // Extract extension and file data
+    const decryptedArray = new Uint8Array(decryptedData);
+    const extensionLength = decryptedArray[0];
+    const extensionBytes = decryptedArray.slice(1, 1 + extensionLength);
+    const fileData = decryptedArray.slice(1 + extensionLength);
+    
+    const fileExtension = decoder.decode(extensionBytes);
+
+    return { decryptedData: fileData, fileExtension };
   }
 
   return (
@@ -141,16 +180,16 @@ export default function Home() {
       <div className="section">
         <h2>Encrypt File</h2>
         <div className="input-group">
-          <input type="file" onChange={handleFileChange} />
+          <input type="file" onChange={(e) => handleFileChange(e, 'encrypt')} />
           <input 
             type="password" 
             placeholder="Enter password" 
-            value={password} 
-            onChange={handlePasswordChange} 
+            value={encryptPassword} 
+            onChange={(e) => handlePasswordChange(e, 'encrypt')} 
           />
         </div>
-        <button className="action-button" onClick={handleEncryptFile} disabled={loading}>
-          {loading ? "Encrypting..." : "Encrypt File"}
+        <button className="action-button" onClick={handleEncryptFile} disabled={encryptLoading}>
+          {encryptLoading ? "Encrypting..." : "Encrypt File"}
         </button>
         {encryptedFile && (
           <div className="download-section">
@@ -166,23 +205,23 @@ export default function Home() {
       <div className="section">
         <h2>Decrypt File</h2>
         <div className="input-group">
-          <input type="file" onChange={handleFileChange} />
+          <input type="file" onChange={(e) => handleFileChange(e, 'decrypt')} />
           <input 
             type="password" 
             placeholder="Enter password" 
-            value={password} 
-            onChange={handlePasswordChange} 
+            value={decryptPassword} 
+            onChange={(e) => handlePasswordChange(e, 'decrypt')} 
           />
         </div>
-        <button className="action-button" onClick={handleDecryptFile} disabled={loading}>
-          {loading ? "Decrypting..." : "Decrypt File"}
+        <button className="action-button" onClick={handleDecryptFile} disabled={decryptLoading}>
+          {decryptLoading ? "Decrypting..." : "Decrypt File"}
         </button>
         {decryptedFile && (
           <div className="download-section">
             <h3>Decrypted File:</h3>
             <a 
-              href={decryptedFile} 
-              download={`decrypted_file.${fileExtension}`} 
+              href={decryptedFile.url} 
+              download={`decrypted_file.${decryptedFile.extension}`} 
               className="download-link"
             >
               Download Decrypted File
@@ -190,8 +229,7 @@ export default function Home() {
           </div>
         )}
       </div>
-      
-      {/* Add your CSS styling */}
+
       <style jsx>{`
         .app-container {
           font-family: 'Arial', sans-serif;
@@ -202,6 +240,7 @@ export default function Home() {
           padding: 20px;
           border-radius: 10px;
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          min-height: 100vh;
         }
         
         h1 {
@@ -239,6 +278,13 @@ export default function Home() {
           margin-bottom: 10px;
         }
 
+        .file-info {
+          color: #666;
+          font-size: 0.9rem;
+          margin-bottom: 10px;
+          font-style: italic;
+        }
+
         .action-button {
           padding: 12px 20px;
           background-color: #4CAF50;
@@ -255,12 +301,15 @@ export default function Home() {
           cursor: not-allowed;
         }
 
-        .action-button:hover {
+        .action-button:hover:not(:disabled) {
           background-color: #45a049;
         }
 
         .download-section {
           margin-top: 20px;
+          padding: 15px;
+          background-color: #f9f9f9;
+          border-radius: 5px;
         }
 
         .download-link {
