@@ -231,98 +231,165 @@ export default function Home() {
       </div>
 
       <style jsx>{`
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&family=Inter:wght@400;600&display=swap');
+
         .app-container {
-          font-family: 'Arial', sans-serif;
+          font-family: 'Inter', sans-serif;
+          background-color: #f5f7fa; /* very light gray */
+          color: #2e3440; /* dark slate gray */
+          min-height: 100vh;
+          padding: 60px 24px;
           display: flex;
           flex-direction: column;
           align-items: center;
-          background-color: #f0f4f8;
-          padding: 20px;
-          border-radius: 10px;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-          min-height: 100vh;
         }
-        
+
         h1 {
-          color: #333;
-          font-size: 2.5rem;
-          margin-bottom: 20px;
+          font-family: 'Roboto Slab', serif;
+          font-size: 3rem;
+          font-weight: 700;
+          margin-bottom: 56px;
+          color: #1f2937;
+          text-align: center;
+          letter-spacing: -0.03em;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
 
         .section {
           width: 100%;
           max-width: 600px;
-          margin-bottom: 40px;
-          padding: 20px;
-          background-color: white;
-          border-radius: 8px;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          background: #ffffff;
+          border-radius: 14px;
+          box-shadow: 0 8px 16px rgb(0 0 0 / 0.08);
+          padding: 36px 32px;
+          margin-bottom: 56px;
+          transition: box-shadow 0.3s ease;
+        }
+
+        .section:hover {
+          box-shadow: 0 12px 24px rgb(0 0 0 / 0.12);
         }
 
         h2 {
-          color: #333;
-          margin-bottom: 10px;
+          font-family: 'Roboto Slab', serif;
+          font-weight: 700;
+          font-size: 1.75rem;
+          margin-bottom: 28px;
+          color: #1f2937;
+          border-bottom: 2px solid #3b82f6; /* subtle blue underline */
+          padding-bottom: 8px;
         }
 
         .input-group {
           display: flex;
           flex-direction: column;
-          margin-bottom: 20px;
+          gap: 20px;
+          margin-bottom: 32px;
         }
 
-        input {
-          padding: 10px;
+        input[type="file"],
+        input[type="password"] {
+          padding: 14px 18px;
           font-size: 1rem;
-          border-radius: 5px;
-          border: 1px solid #ccc;
-          margin-bottom: 10px;
+          border-radius: 10px;
+          border: 1.8px solid #d1d5db; /* soft neutral border */
+          background-color: #f9fafb;
+          color: #374151;
+          transition: border-color 0.25s ease, box-shadow 0.25s ease;
+          font-weight: 500;
         }
 
-        .file-info {
-          color: #666;
-          font-size: 0.9rem;
-          margin-bottom: 10px;
-          font-style: italic;
-        }
-
-        .action-button {
-          padding: 12px 20px;
-          background-color: #4CAF50;
-          color: white;
-          border: none;
-          border-radius: 5px;
-          font-size: 1rem;
+        input[type="file"]::-webkit-file-upload-button {
           cursor: pointer;
+          background-color: #2563eb; /* primary blue */
+          border: none;
+          padding: 10px 22px;
+          border-radius: 10px;
+          color: white;
+          font-weight: 700;
+          font-size: 1rem;
           transition: background-color 0.3s ease;
         }
 
+        input[type="file"]::-webkit-file-upload-button:hover {
+          background-color: #1e40af;
+        }
+
+        input[type="password"]:focus,
+        input[type="file"]:focus {
+          outline: none;
+          border-color: #2563eb;
+          box-shadow: 0 0 10px rgb(37 99 235 / 0.5);
+          background-color: #fff;
+        }
+
+        .action-button {
+          padding: 16px 36px;
+          font-size: 1.15rem;
+          font-weight: 700;
+          border-radius: 12px;
+          border: none;
+          background-color: #2563eb;
+          color: white;
+          cursor: pointer;
+          transition: background-color 0.3s ease, box-shadow 0.3s ease;
+          letter-spacing: 0.03em;
+          user-select: none;
+        }
+
         .action-button:disabled {
-          background-color: #ccc;
+          background-color: #93c5fd;
           cursor: not-allowed;
+          color: #e0e7ff;
+          box-shadow: none;
         }
 
         .action-button:hover:not(:disabled) {
-          background-color: #45a049;
+          background-color: #1e40af;
+          box-shadow: 0 6px 20px rgb(30 64 175 / 0.45);
+        }
+
+        .action-button:active:not(:disabled) {
+          background-color: #1b3a8a;
+          box-shadow: 0 3px 12px rgb(27 58 138 / 0.5);
         }
 
         .download-section {
-          margin-top: 20px;
-          padding: 15px;
-          background-color: #f9f9f9;
-          border-radius: 5px;
+          margin-top: 32px;
+          padding: 24px;
+          background-color: #f3f4f6;
+          border-radius: 14px;
+          text-align: center;
+          box-shadow: 0 2px 8px rgb(0 0 0 / 0.06);
+          transition: box-shadow 0.3s ease;
+        }
+
+        .download-section:hover {
+          box-shadow: 0 8px 20px rgb(0 0 0 / 0.1);
         }
 
         .download-link {
-          color: #007bff;
+          display: inline-block;
+          background-color: #1e40af;
+          color: white;
+          font-weight: 700;
+          font-size: 1.1rem;
+          padding: 14px 36px;
+          border-radius: 9999px;
           text-decoration: none;
-          font-size: 1rem;
-          font-weight: bold;
+          box-shadow: 0 4px 16px rgb(30 64 175 / 0.6);
+          transition: background-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+          user-select: none;
         }
 
         .download-link:hover {
-          text-decoration: underline;
+          background-color: #143c8a;
+          box-shadow: 0 8px 28px rgb(20 60 138 / 0.7);
+          transform: scale(1.07);
         }
       `}</style>
+
     </div>
   );
 }
