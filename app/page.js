@@ -174,7 +174,7 @@ export default function Home() {
 
   return (
     <div className="app-container">
-      <h1>File Encryption & Decryption Tool (ASHIK)</h1>
+      <h1>Trusted File Protection Suite</h1>
 
       {/* Encrypt Section */}
       <div className="section">
